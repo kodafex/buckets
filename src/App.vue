@@ -7,7 +7,20 @@ export default {
       quantity: 10000,
       sizes: [
         50, 100, 150, 200, 250, 300, 350, 400, 500, 750, 1000
-      ]
+      ],
+      unavailable: []
+    }
+  },
+  methods: {
+    toggleBucket(b) {
+      let index = this.unavailable.indexOf(b.size)
+      if (index === -1) {
+        this.unavailable.push(b.size)
+      }
+      else {
+        this.unavailable.splice(index, 1)
+      }
+      console.log(this.unavailable)
     }
   },
   computed: {
@@ -17,22 +30,22 @@ export default {
       let buckets = sizes.map(s => ({
         size: s,
         count: 0,
-        quantity: 0
+        quantity: 0,
+        available: !this.unavailable.includes(s),
       }))
       let remaining = this.quantity
-      buckets.forEach((bucket, i) => {
+      buckets.filter(b => b.available).forEach((bucket, i, filtered) => {
         if (remaining >= bucket.size) {
           bucket.count = Math.trunc(remaining / bucket.size)
           bucket.quantity = bucket.size * bucket.count
           remaining = remaining - bucket.quantity
         }
-        if (i === buckets.length - 1 && remaining > 0) {
+        if (i === filtered.length - 1 && remaining > 0) {
           bucket.count += 1
           bucket.quantity += remaining
           remaining = 0
         }
       })
-      console.log(buckets)
       return buckets
     }
   }
@@ -42,25 +55,41 @@ export default {
 <template>
   <div id="app" class="m-20">
     <section>
-      <p class="text-gray-600 font-bold uppercase">Total Quantity</p>
+      <p class="text-gray-600 font-bold uppercase">Quantity</p>
       <input v-model.number="quantity" class="px-2 py-1 mt-2" type="number" />
     </section>
     <section class="mt-10">
-      <p class="text-gray-600 font-bold uppercase">Available Sizes</p>
+      <p class="text-gray-600 font-bold uppercase">Containers</p>
       <div class="mt-2 max-w-lg grid grid-cols-4 gap-4">
         <div
           v-for="bucket in buckets"
-          class="p-2 flex flex-col items-center justify-center text-blue-600 font-bold bg-white rounded-lg shadow-lg"
-          :class="{'bg-gray-400': bucket.count === 0}"
+          class="bucket p-2 flex flex-col items-center justify-center text-blue-600 border-4 font-bold rounded-lg"
+          :class="{'bucket-available': bucket.available, 'bucket-used': bucket.quantity > 0}"
           :key="bucket.size"
         >
           <p>{{bucket.count}} X</p>
           <p class="text-3xl">{{bucket.size}}</p>
           <p>{{bucket.quantity}}</p>
+          <button class="mt-4 p-1 w-12 rounded-full bg-gray-400"
+                  @click="toggleBucket(bucket)">
+            <div  class="w-4 h-4 rounded-full bg-blue-600"
+                  :class="{'ml-auto': bucket.available}">
+            </div>
+          </button>
         </div>
       </div>
     </section>
   </div>
 </template>
 
-<style src="./assets/css/style.css"></style>
+<style scoped>
+.bucket-available {
+  @apply bg-gray-100 border-gray-100 shadow
+}
+.bucket:not(.bucket-available) {
+  @apply bg-gray-100 border-gray-100 opacity-50
+}
+.bucket-used {
+  @apply bg-white border-4 border-blue-500 shadow-lg
+}
+</style>
